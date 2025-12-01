@@ -89,6 +89,13 @@ async function run() {
         const ridersCollection = db.collection('riders')
 
         // step-16 users related api
+        app.get('/users', verifyFBToken, async (req, res) => {
+            const cursor = userCollection.find();
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             user.role = 'user';
@@ -104,6 +111,26 @@ async function run() {
             const result = await userCollection.insertOne(user);
             res.send(result);
 
+        })
+
+        app.patch('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const roleInfo = req.body;
+            const query = { _id: new ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    role: roleInfo.role
+                }
+            }
+            const result = await userCollection.updateOne(query, updatedDoc)
+            res.send(result);
+        })
+
+        app.get('/users/:email/role', async (req, res) => {
+            const email = req.params.email;
+            const query = {email}
+            const user = await userCollection.findOne(query);
+            res.send({role: user?.role || 'user' })
         })
 
         // step-7 all parcel api
@@ -291,21 +318,21 @@ async function run() {
             res.send(result)
         })
 
-        app.patch('/riders/:id', verifyFBToken, async (req, res)=>{
+        app.patch('/riders/:id', verifyFBToken, async (req, res) => {
             const status = req.body.status;
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const updatedDoc = {
                 $set: {
                     status: status
                 }
             }
             const result = await ridersCollection.updateOne(query, updatedDoc)
-            if(status === 'approved'){
+            if (status === 'approved') {
                 const email = req.body.email;
-                const userQuery = {email}
+                const userQuery = { email }
                 const updateUser = {
-                    $set:{
+                    $set: {
                         role: 'rider'
                     }
                 }
